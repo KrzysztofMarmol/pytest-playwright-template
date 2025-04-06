@@ -74,6 +74,10 @@ This repository provides a template for setting up End-to-End (E2E) tests using 
       ```bash
       playwright install
       ```
+    - To install a single browser (e.g., only Chromium):
+      ```bash
+      playwright install chromium
+      ```
     - You might need system dependencies for the browsers. If the above command fails or you are on Linux, run:
       ```bash
       playwright install --with-deps
@@ -85,7 +89,6 @@ This repository provides a template for setting up End-to-End (E2E) tests using 
 ├── .env.example        # Example environment variables file
 ├── .gitignore          # Files ignored by git
 ├── Dockerfile          # Dockerfile for running tests
-├── Dockerfile.trace-viewer # Dockerfile for viewing Playwright traces
 ├── README.md           # This file
 ├── conftest.py         # Pytest fixtures and hooks
 ├── pages/              # Page Object Model classes
@@ -124,10 +127,10 @@ Make sure your virtual environment is activated.
   ```
 
 - **Run tests in parallel (using available CPU cores):**
-
   ```bash
   pytest -n auto
   ```
+  See pytest-xdist docs: https://pytest-xdist.readthedocs.io/
 
 - **Run tests with Playwright tracing enabled:**
   (Useful for debugging failed tests)
@@ -166,6 +169,7 @@ Make sure your virtual environment is activated.
         docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=1 -v $(pwd)/allure-results:/app/allure-results frankescobar/allure-docker-service
         ```
       - Open `http://localhost:5050/` in your web browser. The report will be generated automatically and updated if new results appear in `allure-results`.
+      - For the latest report, navigate to `http://localhost:5050/allure-docker-service/latest-report`
       - _(Note: If using Docker Desktop on Windows with WSL2, you might need to use the full path or adjust the volume mount syntax accordingly, e.g., `-v //c/Users/YourUser/Projects/pytest-playwright-template/allure-results:/app/allure-results`)_
 
 - **Playwright Trace Viewer:**
@@ -174,7 +178,6 @@ Make sure your virtual environment is activated.
       ```bash
       playwright show-trace test-results/<path-to-your-test>/trace.zip
       ```
-  3.  Alternatively, use the Docker Trace Viewer (see Docker section below).
 
 ## Using Docker
 
@@ -197,15 +200,15 @@ Make sure your virtual environment is activated.
   - Run all tests, mounting local result directories:
     ```bash
     docker run --rm \
-        -v $(pwd)/allure-results:/automation/allure-results \
-        -v $(pwd)/test-results:/automation/test-results \
+        -v $(pwd)/reports/allure-results:/automation/reports/allure-results \
+        -v $(pwd)/reports/test-results:/automation/resports/test-results \
         pytest-runner
     ```
   - Run tests passing the `.env` file (use with caution, prefer injected secrets in CI):
     ```bash
     docker run --rm --env-file .env \
-        -v $(pwd)/allure-results:/automation/allure-results \
-        -v $(pwd)/test-results:/automation/test-results \
+        -v $(pwd)/reports/allure-results:/automation/reports/allure-results \
+        -v $(pwd)/reports/test-results:/automation/resports/test-results \
         pytest-runner
     ```
   - **Run a specific test file** inside the container:
@@ -223,19 +226,6 @@ Make sure your virtual environment is activated.
   - _Note: Remember to adjust volume mount paths (`/automation/...`) if you changed the `WORKDIR` in the Dockerfile._
   - _Note: For CI/CD pipelines, prefer injecting secrets as environment variables rather than mounting the `.env` file._
 
-- **Build the Trace Viewer Image:**
-
-  ```bash
-  docker build -t trace-viewer -f Dockerfile.trace-viewer .
-  ```
-
-- **Run the Trace Viewer Container:**
-  - Make sure you have run tests with tracing enabled and have `trace.zip` files in a directory (e.g., `test-results`).
-  - Run the container, mounting your trace results directory to `/traces` inside the container:
-    ```bash
-    docker run --rm -p 8000:8000 -v $(pwd)/test-results:/traces trace-viewer
-    ```
-  - Open `http://localhost:8000` in your browser. Navigate to the specific `trace.zip` file you want to view.
 
 ## Configuration
 
